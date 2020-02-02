@@ -1,12 +1,11 @@
 module JqData
 
-
 import JSON,HTTP
 using DataFrames,CSV
 
 export get_token,get_current_token,get_query_count,get_security_info
 export get_all_securities,get_index_stocks,get_margincash_stocks,get_marginsec_stocks
-export get_locked_share,get_locked_shares,get_index_stocks,get_index_weights
+export get_locked_shares,get_locked_shares,get_index_stocks,get_index_weights
 export get_industries,get_industry,get_industry_stocks
 export get_concepts,get_concepts
 export get_trade_days,get_all_trade_days
@@ -18,15 +17,41 @@ export get_ticks,get_ticks_period,get_factor_values,run_query
 export get_fundamentals,get_all_factors,get_pause_stocks,get_alpha101,get_alpha191
 export get_fq_factor,get_current_price,get_call_auction
 
-url="https://dataapi.joinquant.com/apis"
 
+url="https://dataapi.joinquant.com/apis"
+"""
+get_token - 获取用户凭证
+调用其他获取数据接口之前，需要先调用本接口获取token。token被作为用户认证使用，当天有效
+
+{
+    "method": "get_token",
+    "mob": "135xxxxxxx",
+    "pwd": "xxxxxxxxxx",
+}
+返回 token:
+
+5b6a9ba7b0f572bb6c287e280ed
+token是调取数据唯一标识。token过期或者更改用户权限后，可以重新获取。重新获取token后，之前的token会失效。
+"""
 function get_token()
     body=Dict("method"=>"get_token","mob"=>"13588711815","pwd"=>"720216")
     body=JSON.json(body)
     response=HTTP.post(url,"",body)
     String(response.body)
 end
+"""
+get_current_token- 获取用户当前可用凭证
+当存在用户有效token时，直接返回原token，如果没有token或token失效则生成新token并返回
 
+{
+    "method": "get_current_token",
+    "mob": "135xxxxxxx",
+    "pwd": "xxxxxxxxxx",
+}
+返回 token:
+
+5b6a9ba7b0f572bb6c287e280ed
+"""
 function get_current_token()
     body=Dict("method"=>"get_current_token","mob"=>"13588711815","pwd"=>"720216")
     body=JSON.json(body)
@@ -50,7 +75,30 @@ function get_query_count()
     response=HTTP.post(url,"",JSON.json(body))
     parse(Int,String(response.body))
 end
+"""
+get_security_info - 获取单个标的信息
+获取股票/基金/指数的信息
 
+参数:
+
+code: 证券代码
+{
+    "method": "get_security_info",
+    "token": "5b6a9ba7b0f572bb6c287e280ed",
+    "code": "502050.XSHG"
+}
+返回:
+
+code: 标的代码
+display_name: 中文名称
+name: 缩写简称
+start_date: 上市日期, [datetime.date] 类型
+end_date: 退市日期， [datetime.date] 类型, 如果没有退市则为2200-01-01
+type: 类型，stock(股票)，index(指数)，etf(ETF基金)，fja（分级A），fjb（分级B）
+parent: 分级基金的母基金代码
+code,display_name,name,start_date,end_date,type,parent
+502050.XSHG,上证50B,SZ50B,2015-04-27,2200-01-01,fjb,502048.XSHG
+"""
 function get_security_info(code)
     token=get_current_token()
     body=Dict("method"=>"get_security_info","token"=>token,"code"=>code)
@@ -120,12 +168,12 @@ function get_price(code;unit="1d",count=10,end_date="",fq_ref_date="")
     dataframe(body)
 end
 
-function get_all_securities(date)
+function get_all_securities(code;date="")
     token=get_token()
     body=Dict(
         "method"=>"get_all_securities",
         "token"=>token,
-        "code"=>"stock",
+        "code"=>code,
         "date"=>date        
     )
     dataframe(body)
@@ -149,7 +197,7 @@ date: 查询日期
 000001.XSHE
 000002.XSHE
 """
-function get_index_stocks(code,date)
+function get_index_stocks(code;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_index_stocks",
@@ -176,7 +224,7 @@ date: 查询日期，默认为前一交易日
 000001.XSHE
 000002.XSHE
 """
-function get_margincash_stocks(date)
+function get_margincash_stocks(;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_margincash_stocks",
@@ -202,7 +250,7 @@ date: 查询日期，默认为前一交易日
 000001.XSHE
 000002.XSHE
 """
-function get_marginsec_stocks(date)
+function get_marginsec_stocks(;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_marginsec_stocks",
@@ -239,7 +287,7 @@ day,code,num,rate1,rate2
 2010-09-29,600000.XSHG,1175406872.0000,0.1024,0.1141
 2015-10-14,600000.XSHG,3730694283.0000,0.2000,0.2500
 """
-function get_locked_share(code,date,end_date)
+function get_locked_shares(code;date="",end_date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_locked_shares",
@@ -275,15 +323,13 @@ code,display_name,date,weight
 000001.XSHE,平安银行,2018-01-09,0.9730
 000002.XSHE,万科A,2018-01-09,1.2870
 """
-function get_index_weights(code,display_name,date,weight)
+function get_index_weights(code;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_index_weights",
         "token"=>token,
         "code"=>code,
-        "display_name"=>display_name,
-        "date"=>date,
-        "weight"=>weight       
+        "date"=>date    
     )
     dataframe(body)
 end
@@ -349,7 +395,7 @@ jq_l1,HY011,房地产指数
 jq_l2,HY509,房地产开发指数
 sw_l1,801180,房地产I
 """
-function get_industry(code,date)
+function get_industry(code;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_industry",
@@ -380,7 +426,7 @@ date: 查询日期
 000001.XSHE
 000002.XSHE
 """
-function get_industry_stocks(code,date)
+function get_industry_stocks(code;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_industry_stocks",
@@ -438,7 +484,7 @@ date: 查询日期,
 000791.XSHE
 000836.XSHE
 """
-function get_concept_stocks(code,date)
+function get_concept_stocks(code;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_concept_stocks",
@@ -469,7 +515,7 @@ end_date: 结束日期
 2018-10-09
 2018-10-10
 """
-function get_trade_days(date,end_date)
+function get_trade_days(date;end_date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_trade_days",
@@ -529,7 +575,7 @@ date,sec_code,fin_value,fin_buy_value,fin_refund_value,sec_value,sec_sell_value,
 2016-01-04,000001.XSHE,3472611852,152129217,169414153,594640,184100,317900,3479349123
 2016-01-05,000001.XSHE,3439316930,143615276,176910198,584540,20800,30900,3445980686
 """
-function get_mtss(code,date,end_date)
+function get_mtss(code,date;end_date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_mtss",
@@ -576,7 +622,7 @@ date,sec_code,change_pct,net_amount_main,net_pct_main,net_amount_xl,net_pct_xl,n
 2016-02-01,000001.XSHE,-2.00,-6940.54,-16.82,-5296.92,-12.84,-1643.63,-3.98,3782.95,9.17,3157.59,7.65
 2016-02-02,000001.XSHE,1.53,1375.48,3.74,2235.87,6.09,-860.39,-2.34,-194.21,-0.53,-1181.27,-3.22
 """
-function get_money_flow(code,date,end_date)
+function get_money_flow(code,date;end_date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_money_flow",
@@ -623,7 +669,7 @@ code,day,direction,rank,abnormal_code,abnormal_name,sales_depart_name,buy_value,
 000001.XSHE,2017-07-11,ALL,0,106001,涨幅偏离值达7%的证券,,495288143.0000,0.1289,305812442.0000,0.0796,801100585.0000,189475701.0000,3842010171.2900
 000001.XSHE,2017-07-11,BUY,1,106001,涨幅偏离值达7%的证券,中信证券股份有限公司上海古北路证券营业部,134111708
 """
-function get_billboard_list(code,date,end_date)
+function get_billboard_list(code,date;end_date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_billboard_list",
@@ -655,7 +701,7 @@ date: 指定日期
 AU1701.XSGE
 AU1702.XSGE
 """
-function get_future_contracts(code,date)
+function get_future_contracts(code;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_future_contracts",
@@ -684,7 +730,7 @@ date: 指定日期参数，获取历史上该日期的主力期货合约
 主力合约对应的期货合约
 AU1812.XSGE
 """
-function get_dominant_future(code,date)
+function get_dominant_future(code;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_dominant_future",
@@ -743,21 +789,20 @@ heavy_hold_bond_proportion: 基金重仓债券占基金资产净值比例（季�
     "heavy_hold_bond_proportion": 13.209999999999999
 }
 """
-function get_fund_info(code,date)
+function get_fund_info(code;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_fund_info",
         "token"=>token,
         "code"=>code,
-        "date"=>date,
-        
+        "date"=>date
     )
     dataframe(body)
 end
 
 """
 get_current_tick - 获取最新的 tick 数据
-参数：
+参数：需要付费
 
 code: 标的代码， 支持股票、指数、基金、期货等。 不可以使用主力合约和指数合约代码。
 {
@@ -786,16 +831,14 @@ function get_current_tick(code)
     body=Dict(
         "method"=>"get_current_tick",
         "token"=>token,
-        "code"=>code,
-        
-        
+        "code"=>code
     )
     dataframe(body)
 end
 
 """
 get_current_ticks - 获取多标的最新的 tick 数据
-参数：
+参数：需要付费
 
 code: 标的代码， 多个标的使用,分隔。每次请求的标的必须是相同类型。标的类型包括： 股票、指数、场内基金、期货、期权
 {
@@ -859,7 +902,7 @@ date,is_st
 2018-05-29,0
 2018-05-30,0
 """
-function get_extras(code,date,end_date)
+function get_extras(code,date;end_date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_extras",
@@ -914,7 +957,7 @@ date,open,close,high,low,volume,money
 2018-12-04 10:00,11.00,11.03,11.07,10.97,4302800,47472956.00
 2018-12-04 10:30,11.04,11.04,11.06,10.98,3047800,33599476.00
 """
-function get_price_period(code,unit,date,end_date,fq_ref_date)
+function get_price_period(code,date;unit="1d",end_date="",fq_ref_date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_price_period",
@@ -934,7 +977,7 @@ get_ticks - 获取tick数据
 期货部分， 支持 2010-01-01 至今的tick数据，提供买一卖一数据。 如果要获取主力合约的tick数据，可以先使用get_dominant_future获取主力合约对应的标的
 期权部分，支持 2017-01-01 至今的tick数据，提供买五卖五数据
 
-参数：
+参数：需要付费
 
 code: 证券代码
 count: 取出指定时间区间内前多少条的tick数据，如不填count，则返回end_date一天内的全部tick
@@ -966,7 +1009,7 @@ time,current,high,low,volume,money,a1_p,a1_v,a2_p,a2_v,a3_p,a3_v,a4_p,a4_v,a5_p,
 2018-07-02 14:56:21,8.62,9.05,8.56,1280510.0,1128400132.0,8.62,5006.0,8.63,6549.0,8.64,417.0,8.65,466.0,8.66,816.0,8.61,1134.0,8.6,3960.0,8.59,2054.0,8.58,3171.0,8.57,1710.0
 2018-07-02 14:56:24,8.62,9.05,8.56,1280663.0,1128531972.0,8.62,4934.0,8.63,6519.0,8.64,417.0,8.65,4
 """
-function get_ticks(code,count,end_date)
+function get_ticks(code;count=15,end_date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_ticks",
@@ -985,7 +1028,7 @@ get_ticks_period- 按时间段获取tick数据
 期货部分， 支持 2010-01-01 至今的tick数据，提供买一卖一数据。 如果要获取主力合约的tick数据，可以先使用get_dominant_future获取主力合约对应的标的
 期权部分，支持 2017-01-01 至今的tick数据，提供买五卖五数据
 
-参数：
+参数：需要付费
 
 code: 证券代码
 date: 开始时间，格式2018-07-03或2018-07-03 10:40:00
@@ -1019,7 +1062,7 @@ time,current,high,low,volume,money,position,a1_p,a1_v,b1_p,b1_v
 2019-03-27 21:40:11,48480.0,48500.0,48430.0,5458.0,1322750300.0,128176.0,48480.0,8.0,48470.0,18.0
 2019-03-27 21:40:11.500000,48480.0,48500.0,48430.0,5464.0,1324204700.0,128178.0,48490.0,39.0,484
 """
-function get_ticks_period(code,date,end_date,skip=true)
+function get_ticks_period(code,date;end_date="",skip=true)
     token=get_current_token()
     body=Dict(
         "method"=>"get_ticks_period",
@@ -1036,7 +1079,7 @@ end
 get_factor_values - 聚宽因子库数据
 获取因子值的 API，点击查看因子列表
 
-参数：
+参数：需要付费
 
 code: 单只股票代码
 columns: 因子名称，因子名称，多个因子用逗号分隔
@@ -1063,7 +1106,7 @@ date,cfo_to_ev,net_profit_ratio
 2019-01-21,0.009278,0.217480
 2019-01-22,0.009281,0.217480
 """
-function get_factor_values(code,columns,date,end_date)
+function get_factor_values(code,columns,date;end_date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_factor_values",
@@ -1150,11 +1193,11 @@ code,day,pb_ratio,ps_ratio,capitalization,circulating_cap
 function get_fundamentals(code,table,columns,date,count)
     token=get_current_token()
     body=Dict(
-        "method"=>"run_query",
+        "method"=>"get_fundamentals",
         "token"=>token,
-        "code"=>code,
         "table"=>table,
         "columns"=>columns,
+        "code"=>code,
         "date"=>date,
         "count"=>count
     )
@@ -1218,7 +1261,7 @@ end
 """
 get_alpha101 获取 Alpha 101 因子
 因子来源： 根据 WorldQuant LLC 发表的论文 101 Formulaic Alphas 中给出的 101 个 Alphas 因子公式，我们将公式编写成了函数，方便大家使用。
-
+需要付费
 详细介绍： 函数计算公式、API 调用方法，输入输出值详情请见:数据 - Alpha 101.
 
 参数：
@@ -1242,7 +1285,7 @@ code,alpha_001
 000002.XSHE,0.17
 000004.XSHE,-0.17
 """
-function get_alpha101(code,func_name,date)
+function get_alpha101(code,func_name;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_alpha101",
@@ -1257,7 +1300,7 @@ end
 """
 get_alpha191 获取 Alpha 191 因子
 因子来源： 根据国泰君安数量化专题研究报告 - 基于短周期价量特征的多因子选股体系给出了 191 个短周期交易型阿尔法因子。为了方便用户快速调用，我们将所有Alpha191因子基于股票的后复权价格做了完整的计算。用户只需要指定fq='post’即可获取全新计算的因子数据。
-
+需要付费
 详细介绍： 函数计算公式、API 调用方法，输入输出值详情请见:数据 - Alpha 191.
 
 参数：
@@ -1281,7 +1324,7 @@ code,alpha_003
 000002.XSHE,0.27000000
 000004.XSHE,-0.17000000
 """
-function get_alpha191(code,func_name,date)
+function get_alpha191(code,func_name;date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_alpha191",
@@ -1318,13 +1361,13 @@ date,000001.XSHE
 2019-06-25,0.989576
 2019-06-26,1.000000
 """
-function get_fq_factor(code,fq,date,end_date)
+function get_fq_factor(code,date;fq="pre",end_date="")
     token=get_current_token()
     body=Dict(
         "method"=>"get_fq_factor",
         "token"=>token,
         "code"=>code,
-        "fq"=>fq
+        "fq"=>fq,
         "end_date"=>end_date,
         "date"=>date
     )
@@ -1363,7 +1406,7 @@ end
 """
 get_call_auction 获取集合竞价时的tick数据
 获取指定时间区间内集合竞价时的tick数据
-参数：
+参数：无数据返回
 
 code: 标的代码， 多个标的使用,分隔。支持最多100个标的查询。
 date: 开始日期
@@ -1390,10 +1433,10 @@ code,time,current,volume,money,a1_v,a2_v,a3_v,a4_v,a5_v,a1_p,a2_p,a3_p,a4_p,a5_p
 000001.XSHE,2019-09-20 09:25:03,14.9500,3917700,5856.9600,511751,55200,46700,471356,806000,14.9500,14.9600,14.9700,14.9800,14.9900,556400,229100,151400,179600,115500,14.9400,14.9300,14.9200,14.9100,14.9000
 000002.XSHE,2019-09-20 09:25:03,26.8900,260700,701.0200,17280,16500,3700,1500,4700,26.8900,26.90
 """
-function get_call_auction(code,date,end_date)
+function get_call_auction(code,date;end_date="")
     token=get_current_token()
     body=Dict(
-        "method"=>"get_call_aution",
+        "method"=>"get_call_auction",
         "token"=>token,
         "code"=>code,
         "date"=>date,
@@ -1401,6 +1444,8 @@ function get_call_auction(code,date,end_date)
     )
     dataframe(body)
 end
+
+
 
 
 

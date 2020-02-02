@@ -1,10 +1,17 @@
 name = "JqData"
 uuid = "4296d2f8-d960-4a51-97e7-b097944e4d59"
 authors = ["hzgzh <hzgzh@sina.com>"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+
+[compat]
+CSV = "0.5.22"
+HTTP = "0.8.8"
+DataFrames = "0.20.0"
+JSON = "0.21.0"
+julia = "1"

@@ -12,4 +12,5 @@ push!(LOAD_PATH,"../src")
 
 deploydocs(
     repo = "github.com/hzgzh/JqData.jl",
+    branch = "gh-pages",
 )

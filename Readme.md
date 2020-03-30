@@ -1,6 +1,6 @@
 # Welcome to JQData ApiDoc
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://hzgzh.github.io/JqData.jl/stable)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://USER_NAME.github.io/PACKAGE_NAME.jl/dev)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://hzgzh.github.io/JqData.jl/dev)
 ## 简介
 
 JQData是聚宽数据团队专门为金融机构、学术研究和量化研究者们提供的本地量化金融数据服务。

@@ -111,7 +111,7 @@ function dataframe(body)
     body=JSON.json(body)
     res=HTTP.post(url,"",body)
     res=String(res.body)
-    DataFrame(CSV.File(IOBuffer(res)))
+    readtable(IOBuffer(res))
 end
 """
 get_price(token,code;unit="1d",count=10,end_date="",fq_ref_date="") - 获取指定时间周期的行情数据
